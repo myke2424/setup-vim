@@ -1,21 +1,29 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 VIMRC_PATH=$1
-REQUIRED_DEPENDENCIES=('vim' 'python3-pip')
-YCM_DEPENDENCIES=('build-essential' 'cmake' 'vim-nox' 'python3-dev' 'mono-complete' 'golang' 'nodejs' 'default-jdk' 'npm')
+HOME_DIR=$2
+DEPENDENCIES=('vim' 'python3-pip' 'build-essential' 'cmake' 'vim-nox' 'python3-dev' 'mono-complete' 'golang' 'nodejs' 'default-jdk' 'npm')
 PYTHON_DEPENDENCIES=('flake8')
 
+sudo add-apt-repository ppa:jonathonf/vim
+sudo apt update
+
+if [ ! -d "${HOME_DIR}/.vim" ]; then
+     mkdir $HOME_DIR/.vim $HOME_DIR/.vim/plugged
+fi
+
+
 if [ $# -eq 0  ]; then
-     echo "Provide the path to the vimrc file as a cmd arg"
+     echo "Provide the the following cmdline args: <vimrc_path> <home_dir>"
      exit 1
 fi
 
 echo "Moving vimrc to home directory"
-cp $VIMRC_PATH ~/.vimrc
+cp $VIMRC_PATH $HOME_DIR/.vimrc
 
 echo "Installing vim-plug"
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
 echo "Installing Plugins via :PlugInstall"
 vim -c :PlugInstall
@@ -23,30 +31,27 @@ vim -c :PlugInstall
 
 echo "Installing Vim-Pathogen"
 mkdir -p ~/.vim/autoload ~/.vim/bundle && \
-curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
+     curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
 
-echo "Installing required dependencies"
-for dep in "${REQUIRED_DEPENDENCIES[@]}";do
-     sudo apt install $dep
-done
-
-echo "Installing dependencies for Vim YouCompleteMe"
-for dep in "${YCM_DEPENDENCIES[@]}";do
-     sudo apt install $dep
+echo "Installing dependencies"
+for dep in "${DEPENDENCIES[@]}";do
+     sudo apt install -y $dep
 done
 
 echo "Running YCM Install Script"
-YCM_DIR=('~/.vim/plugged/YouCompleteMe')
+YCM_DIR="${HOME_DIR}/.vim/plugged/YouCompleteMe"
 
-if [ ! -d "$YCM_DIR" ];then
+if [ ! -d "$YCM_DIR" ]; then
      echo "${YCM_DIR} doesn't exist"
      exit 1
 fi
 
-cd $YCM_DIR
-python3 install.py --all
+python3 $YCM_DIR/install.py --all
 
 echo "Installing Python Dependencies"
 for dep in "${PYTHON_DEPENDENCIES[@]}";do
-    pip3 install $dep
+     pip3 install $dep
 done
+
+echo "Sourcing vimrc"
+source ~/.vimrc
